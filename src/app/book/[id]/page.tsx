@@ -1,22 +1,34 @@
+import { notFound } from "next/navigation";
 import style from "./page.module.css";
+
+// generateStaticParams에 설정하지 않은 값으로 요청이 오면 404로 보내는 값
+// export const dynamicParams = false;
+
+// Page Router 에서 getStaticPath와 동일한 역할
+export function generateStaticParams() {
+  return [{ id: "1" }, { id: "2" }, { id: "3" }];
+}
 
 export default async function Page({
   params,
 }: {
-  params: { id: string | string[] };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_SERVER_URL}/book/${params.id}`
+    `${process.env.NEXT_PUBLIC_API_SERVER_URL}/book/${id}`
   );
 
   if (!response.ok) {
+    if (response.status === 404) {
+      notFound();
+    }
     return <div>오류가 발생했습니다 ...</div>;
   }
 
   const book = await response.json();
 
-  const { id, title, subTitle, description, author, publisher, coverImgUrl } =
-    book;
+  const { title, subTitle, description, author, publisher, coverImgUrl } = book;
   return (
     <div className={style.container}>
       <div
