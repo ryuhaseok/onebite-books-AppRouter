@@ -1,16 +1,28 @@
 import { notFound } from "next/navigation";
 import style from "./page.module.css";
-import { ReviewData } from "@/types";
+import { BookData, ReviewData } from "@/types";
 import ReviewItem from "@/components/review-item";
 import ReviewEditor from "@/components/review-editor";
+import Image from "next/image";
 
 // generateStaticParams에 설정하지 않은 값으로 요청이 오면 404로 보내는 값
 // export const dynamicParams = false;
 
 // Page Router 에서 getStaticPath와 동일한 역할
-export function generateStaticParams() {
-  return [{ id: "1" }, { id: "2" }, { id: "3" }];
-}
+// export async function generateStaticParams() {
+//   const response = await fetch(
+//     `${process.env.NEXT_PUBLIC_API_SERVER_URL}/book`
+//   );
+//   if (!response.ok) {
+//     throw new Error(response.statusText);
+//   }
+
+//   const books: BookData[] = await response.json();
+
+//   return books.map((book) => ({
+//     id: book.id.toString(),
+//   }));
+// }
 
 async function BookDetail({ id }: { id: string }) {
   const response = await fetch(
@@ -33,7 +45,12 @@ async function BookDetail({ id }: { id: string }) {
         className={style.cover_img_container}
         style={{ backgroundImage: `url('${coverImgUrl}')` }}
       >
-        <img src={coverImgUrl} />
+        <Image
+          src={coverImgUrl}
+          width={240}
+          height={300}
+          alt={`도서 ${title}의 이미지`}
+        />
       </div>
       <div className={style.title}>{title}</div>
       <div className={style.subTitle}>{subTitle}</div>
@@ -64,6 +81,33 @@ async function ReviewList({ bookId }: { bookId: string }) {
       ))}
     </section>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_SERVER_URL}/book/${id}`
+  );
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+
+  const book: BookData = await response.json();
+
+  return {
+    title: `${book.title} - 한입북스`,
+    description: `${book.description}`,
+    openGraph: {
+      title: `${book.title} - 한입북스`,
+      description: `${book.description}`,
+      images: [book.coverImgUrl],
+    },
+  };
 }
 
 export default async function Page({
